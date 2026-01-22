@@ -1,7 +1,11 @@
 import numpy as np
-from scipy.signal import resample
+from scipy.signal import resample, resample_poly
 
-def parse_events(path: str, target_len: int = 256, min_len: int = 240) -> dict[int, dict]:
+def parse_events(path: str, target_len: int = 256, min_len: int = 240, resample_method: str = "fft") -> dict[int, dict]:
+    
+    if resample_method not in ("fft", "poly"):
+        raise ValueError(f"resample_method must be 'fft' or 'poly', got '{resample_method}'")
+    
     events: dict[int, dict] = {}
     bad_events: set[int] = set()
     with open(path, "r", encoding="utf-8") as f:
@@ -9,7 +13,7 @@ def parse_events(path: str, target_len: int = 256, min_len: int = 240) -> dict[i
             if not line.strip():
                 continue
 
-            parts = line.rstrip("\n").split("\t")
+            parts = line.rstrip().split("\t")
             if len(parts) < 7:
                 continue
 
@@ -26,12 +30,18 @@ def parse_events(path: str, target_len: int = 256, min_len: int = 240) -> dict[i
                 events.pop(event_id, None)
                 continue
 
+            original_x = x.copy()
+            original_len = x.size
+            
             if x.size != target_len:
-                x = resample(x, target_len).astype(np.float32)
+                if resample_method == "fft":
+                    x = resample(x, target_len).astype(np.float32)
+                else:  # poly
+                    x = resample_poly(x, target_len, x.size, padtype='line').astype(np.float32)
 
             rec = events.get(event_id)
             if rec is None:
-                rec = {"digit": digit, "channels": {}}
+                rec = {"digit": digit, "channels": {}, "original_channels": {}, "original_len": original_len}
                 events[event_id] = rec
             else:
 
@@ -41,6 +51,7 @@ def parse_events(path: str, target_len: int = 256, min_len: int = 240) -> dict[i
                     continue
 
             rec["channels"][channel] = x
+            rec["original_channels"][channel] = original_x
 
     return events
 
