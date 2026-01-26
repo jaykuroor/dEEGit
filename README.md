@@ -12,10 +12,6 @@ This project uses EEG (electroencephalography) data recorded from 5 channels (`A
 
 Multichannel EEG recording of participants seeing or thinking of digits were acquired from MindBigData's open dataset. [Dataset](https://mindbigdata.com/opendb/index.html)
 
-The EEG data was recorded at **128 Hz** for approximately **2 seconds** per trial. In theory, this should yield exactly **256 samples** per channel per event.
-
-### Raw EEG Signal Visualization
-
 Below is an example of what a raw EEG recording looks like across all 5 channels for a single event (digit stimulus):
 
 ![Raw EEG Signal](plots/raw_eeg_signal.png)
@@ -25,9 +21,7 @@ Each subplot shows one electrode channel:
 - **T7 / T8**: Temporal electrodes (left/right hemisphere)
 - **PZ**: Parietal midline electrode
 
-The x-axis shows time in milliseconds (~2 seconds of recording), and the y-axis shows voltage in microvolts (μV). Notice the sample count displayed on each channel - this demonstrates the variable-length issue we need to address.
-
-### The Variable Length Problem
+The x-axis shows time in milliseconds (~2 seconds of recording), and the y-axis shows voltage in microvolts (μV). The EEG data was recorded at **128 Hz** for approximately **2 seconds** per trial. In theory, this should yield exactly **256 samples** per channel per event.
 
 However, real-world data collection is rarely perfect. Due to timing variations in the recording equipment the actual sample counts varied across events. Some recordings had 240 samples, others had 260, 270 etc.
 
