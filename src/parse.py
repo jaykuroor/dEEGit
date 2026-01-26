@@ -1,10 +1,8 @@
 import numpy as np
 from scipy.signal import resample, resample_poly
+from scipy.interpolate import CubicSpline
 
-def parse_events(path: str, target_len: int = 256, min_len: int = 240, resample_method: str = "fft") -> dict[int, dict]:
-    
-    if resample_method not in ("fft", "poly"):
-        raise ValueError(f"resample_method must be 'fft' or 'poly', got '{resample_method}'")
+def parse(path: str, min_len: int = 240, database: str = "IN", chan_num: int = 5) -> dict[int, dict]:
     
     events: dict[int, dict] = {}
     bad_events: set[int] = set()
@@ -20,40 +18,76 @@ def parse_events(path: str, target_len: int = 256, min_len: int = 240, resample_
             event_id = int(parts[1])
             if event_id in bad_events:
                 continue
+            elif int(parts[5]) < min_len or parts[2] != database:
+                bad_events.add(event_id)
+                events.pop(event_id, None)
+                continue
             channel = parts[3]
             digit = int(parts[4])
 
-            x = np.fromstring(parts[6], sep=",", dtype=np.float32)
+            x = np.array(parts[6].split(","), dtype=np.float32)
 
             if x.size < min_len:
                 bad_events.add(event_id)
                 events.pop(event_id, None)
                 continue
 
-            original_x = x.copy()
-            original_len = x.size
-            
-            if x.size != target_len:
-                if resample_method == "fft":
-                    x = resample(x, target_len).astype(np.float32)
-                else:  # poly
-                    x = resample_poly(x, target_len, x.size, padtype='line').astype(np.float32)
-
             rec = events.get(event_id)
             if rec is None:
-                rec = {"digit": digit, "channels": {}, "original_channels": {}, "original_len": original_len}
+                rec = {"digit": digit, "channels": {}}
                 events[event_id] = rec
             else:
 
-                if rec["digit"] != digit:
+                if rec["digit"] != digit or channel in rec["channels"] or len(rec["channels"]) >= chan_num:
                     bad_events.add(event_id)
                     events.pop(event_id, None)
                     continue
 
             rec["channels"][channel] = x
-            rec["original_channels"][channel] = original_x
 
     return events
+
+def preprocess(events: dict[int, dict], target_len: int = 256, resample_method: int = 0, chan_num: int = 5) -> dict[int, dict]:
+    new_events: dict[int, dict] = {}
+    for event_id, rec in events.items():
+        if len(rec["channels"]) < chan_num:
+            continue
+        ch_map = rec["channels"]
+        new_ch_map: dict[str, np.ndarray] = {}
+        for ch_name, x in ch_map.items():
+
+            if x.size != target_len:
+
+                if resample_method == 0:  # fft
+                    x_resampled = resample(x, target_len).astype(np.float32)
+
+                elif resample_method == 1:  # poly
+                    x_resampled = resample_poly(x, target_len, x.size, padtype='line').astype(np.float32)
+
+                elif resample_method == 2:  # CubicSpline
+                    cs = CubicSpline(np.arange(x.size), x)
+                    x_resampled = cs(np.linspace(0, x.size - 1, target_len)).astype(np.float32)
+
+                elif resample_method == 3:  # None
+                    x_resampled = x
+
+                else:
+                    raise ValueError(f"Invalid resample_method: {resample_method}")
+                
+                sd = np.std(x_resampled)
+
+                if sd > 0:  x_normalized = (x_resampled - np.mean(x_resampled)) / sd
+                else:       x_normalized = x_resampled - np.mean(x_resampled)
+
+                new_ch_map[ch_name] = x_normalized
+            else:
+                sd = np.std(x)
+                if sd > 0:  x_normalized = (x - np.mean(x)) / sd
+                else:       x_normalized = x - np.mean(x)
+                new_ch_map[ch_name] = x_normalized
+        new_rec = {"digit": rec["digit"], "channels": new_ch_map}
+        new_events[event_id] = new_rec
+    return new_events
 
 def events_to_tensor(
     events: dict[int, dict],
