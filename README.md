@@ -2,32 +2,17 @@
 
 A deep learning project that classifies digits (0-9) from EEG brain signals using a Convolutional Neural Network.
 
----
-
-## Table of Contents
-- [Problem Statement](#problem-statement)
-- [The Data](#the-data)
-- [Resampling Method Comparison](#resampling-method-comparison)
-- [Data Pipeline](#data-pipeline)
-
----
-
 ## Problem Statement
 
 Can we decode what digit a person is viewing or thinking about purely from their brain activity?
 
 This project uses EEG (electroencephalography) data recorded from 5 channels (`AF3`, `AF4`, `T7`, `T8`, `PZ`) while participants were exposed to digit stimuli. The goal is to build a neural network that can classify which digit (0-9) corresponds to a given EEG signal segment.
 
----
-
 ## The Data
 
 Multichannel EEG recording of participants seeing or thinking of digits were acquired from MindBigData's open dataset. [Dataset](https://mindbigdata.com/opendb/index.html)
-The EEG data was recorded at **128 Hz** for approximately **2 seconds** per trial. In theory, this should yield exactly **256 samples** per channel per event:
 
-$$
-128 \text{ Hz} \times 2 \text{ s} = 256 \text{ samples}
-$$
+The EEG data was recorded at **128 Hz** for approximately **2 seconds** per trial. In theory, this should yield exactly **256 samples** per channel per event.
 
 ### Raw EEG Signal Visualization
 
@@ -55,8 +40,6 @@ I evaluated three resampling methods:
 1. **FFT-based resampling** (`scipy.signal.resample`) - Uses Fourier transform to resample in the frequency domain
 2. **Polyphase filtering** (`scipy.signal.resample_poly`) - Uses an efficient polyphase filter implementation
 3. **Cubic Spline interpolation** (`scipy.interpolate.CubicSpline`) - Fits a smooth cubic polynomial through the data points
-
----
 
 ## Resampling Method Comparison
 
@@ -112,8 +95,6 @@ FFT resampling assumes the signal is periodic (which EEG signals are not), leadi
 
 **Decision**: Based on this analysis, **polyphase resampling** (`resample_poly`) was selected for the preprocessing pipeline.
 
----
-
 ## Data Pipeline
 
 ### 1. Parsing (`parse.py`)
@@ -163,8 +144,6 @@ The model is currently being built on a **temporal-spatial convolutional archite
 - **Temporal convolutions**: Extract features along the time dimension within each channel
 - **Spatial convolutions**: Learn relationships between different electrode positions
 - **Classification head**: Dense layers mapping learned features to 10 digit classes
-
----
 
 
 ## License
