@@ -1,5 +1,7 @@
 DATA_PATH = "data/IN.txt"
+DATABASE = "IN"
 CHANNELS = ["AF3", "AF4", "T7", "T8", "PZ"]
+CHAN_NUM = 5
 TARGET_LEN = 256
 MIN_LEN = 240
 
