@@ -131,15 +131,21 @@ Data is split stratified by label:
 - **Validation**: 15%
 - **Testing**: 15%
 
-## Model Architecture (Current Stage)
+## Model Architecture
 
-The model is currently being built on a **temporal-spatial convolutional architecture** designed for multi-channel EEG data:
+![CNN Visualization](plots/eegnetchart.png)
+
+The model is currently built based on the EEGNetv4 version, hosting on a **temporal-spatial convolutional architecture** designed for multi-channel EEG data:
 
 - **Temporal convolutions**: Extract features along the time dimension within each channel
 - **Spatial convolutions**: Learn relationships between different electrode positions
 - **Classification head**: Dense layers mapping learned features to 10 digit classes
 
+## Training (Current Stage)
 
-## License
+
+## References
+CNN Architecture based on EEGNetv4
+Lawhern, V. J., Solon, A. J., Waytowich, N. R., Gordon, S. M., Hung, C. P., & Lance, B. J. (2018). EEGNet: a compact convolutional neural network for EEG-based brain–computer interfaces. Journal of Neural Engineering, 15(5), 056013. https://doi.org/10.1088/1741-2552/aace8c
 
 This project is for educational and research purposes.
