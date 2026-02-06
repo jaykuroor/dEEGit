@@ -145,7 +145,8 @@ The model is currently built based on the EEGNetv4 version, hosting on a **tempo
 
 
 ## References
-CNN Architecture based on EEGNetv4
+CNN Architecture based on EEGNetv4 by Lawhern et al.
+
 Lawhern, V. J., Solon, A. J., Waytowich, N. R., Gordon, S. M., Hung, C. P., & Lance, B. J. (2018). EEGNet: a compact convolutional neural network for EEG-based brain–computer interfaces. Journal of Neural Engineering, 15(5), 056013. https://doi.org/10.1088/1741-2552/aace8c
 
 This project is for educational and research purposes.
