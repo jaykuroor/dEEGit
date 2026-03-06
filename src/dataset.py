@@ -1,8 +1,8 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
-from parse import parse, preprocess, events_to_tensor
-import config
+from .parse import parse, preprocess, events_to_tensor
+from . import config
 
 class EEGDataset(Dataset):
     def __init__(self, X, y):
