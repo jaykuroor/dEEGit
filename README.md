@@ -141,8 +141,69 @@ The model is currently built based on the EEGNetv4 version, hosting on a **tempo
 - **Spatial convolutions**: Learn relationships between different electrode positions
 - **Classification head**: Dense layers mapping learned features to 10 digit classes
 
-## Training (Current Stage)
+## Training
 
+### Approach
+
+Training uses **cross-entropy loss** with the **AdamW** optimizer (`weight_decay=1e-4`). AdamW was chosen over vanilla Adam because it decouples weight decay from the gradient update, providing better regularization for small models that are prone to overfitting on noisy EEG data.
+
+The learning rate starts at `1e-3` and is managed by a **ReduceLROnPlateau** scheduler — when validation loss stops improving for a set number of epochs, the LR is halved (`factor=0.5`). This allows the model to make large updates early on and fine-tune as it converges. **Early stopping** with a patience of 10 epochs prevents unnecessary training once the model has stopped learning, and the best checkpoint (by validation loss) is saved automatically.
+
+### Hyperparameters
+
+| Parameter | Value |
+|-----------|-------|
+| Batch size | 64 |
+| Max epochs | 100 |
+| Initial learning rate | 1e-3 |
+| Weight decay | 1e-4 |
+| LR scheduler patience | 5 |
+| Early stopping patience | 10 |
+| Train / Val / Test split | 70% / 15% / 15% |
+| Random seed | 67 |
+
+### Model Variants
+
+Two variants of the EEGNet architecture were implemented and compared:
+
+1. **EEGNet (1D convolutions)** — Uses `Conv1d` layers. Temporal convolutions are applied depthwise per channel, followed by a 1×1 spatial mix, then a separable convolution refinement block. ~9,850 parameters.
+
+2. **EEGNetBetter (2D convolutions)** — Closer to the original EEGNetv4 paper. Reshapes input to `(batch, 1, channels, time)` and uses `Conv2d` layers with depthwise spatial filtering along the channel axis. More faithful to Lawhern et al.'s design with configurable `F1`, `D`, `F2` hyperparameters. ~2,474 parameters.
+
+Both variants follow the same core idea: **temporal convolution → depthwise spatial convolution → depthwise separable convolution → classification head**, with batch normalization, ELU activation, average pooling, and dropout applied between blocks.
+
+## Evaluation & Results
+
+### Training Dynamics
+
+![Training History](plots/training_history.png)
+
+Training consistently triggers early stopping around epoch 27–34, with the LR scheduler reducing the learning rate multiple times before that. The validation loss plateaus quickly while training loss continues to decrease slowly — a classic sign that the model learns some patterns from the training data but these patterns do not generalize.
+
+### Test Set Performance
+
+| Model | Accuracy | Precision | Recall | F1-Score |
+|-------|----------|-----------|--------|----------|
+| EEGNet (1D) | **13.84%** | 0.1384 | 0.1384 | 0.1296 |
+| EEGNetBetter (2D) | 13.04% | 0.1234 | 0.1304 | 0.1199 |
+
+Both models achieve roughly **13–14% test accuracy** on the 10-class digit classification task, which is only marginally above the 10% random-chance baseline.
+
+### Confusion Matrix
+
+![Confusion Matrix](plots/confusion_matrix.png)
+
+The confusion matrix shows no strong diagonal — predictions are spread across classes with slight biases toward certain digits (e.g., digit 1 and 7 tend to be over-predicted). The model has not learned discriminative features for any particular digit class.
+
+### Interpretation
+
+This is an extremely difficult task. Decoding the specific digit a person is viewing from just 5 EEG channels and ~2 seconds of recording pushes against the fundamental limits of non-invasive BCI. Consumer-grade EEG has low spatial resolution and a poor signal-to-noise ratio, especially for fine-grained cognitive states like distinguishing between individual digits.
+
+The model architecture itself is sound — EEGNet has been validated on motor imagery and event-related potential (ERP) tasks where the neural signatures are more pronounced. The challenge here is the data: the neural correlates of passively viewing digits 0–9 are far more subtle and overlapping than the broad spatial patterns seen in motor tasks.
+
+## Comparison
+
+A team in Bangladesh working on the same MindBigData dataset and digit classification task reported achieving approximately **10% accuracy** — equivalent to random guessing. Our results at **~14%** are marginally better, suggesting the pipeline does extract *some* signal, but the task remains largely unsolved with this data and approach. This is consistent with published literature indicating that fine-grained cognitive decoding from low-density EEG is an open problem.
 
 ## References
 CNN Architecture based on EEGNetv4 by Lawhern et al.
