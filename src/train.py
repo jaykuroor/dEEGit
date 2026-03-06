@@ -1,8 +1,3 @@
-"""
-Training module for EEGNet model.
-Provides training loop, validation, and model checkpointing.
-"""
-
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
